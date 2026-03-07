@@ -210,7 +210,9 @@ export function TaskStats() {
     <div className="grid gap-4 md:grid-cols-2">
       <Card>
         <CardHeader>
-          <CardTitle>本周工作量</CardTitle>
+          <CardTitle>
+            本周工作量 <span className="text-sm font-normal text-muted-foreground">{stats.dailyHours.reduce((sum, d) => sum + d.hours, 0).toFixed(1)}h</span>
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-end gap-2" style={{ height: 160 }}>

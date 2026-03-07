@@ -13,6 +13,39 @@ interface TaskCalendarProps {
 
 export function TaskCalendar({ selectedDate, onSelectDate, className }: TaskCalendarProps) {
   const [currentMonth, setCurrentMonth] = React.useState(new Date(selectedDate));
+  const [taskDates, setTaskDates] = React.useState<Set<string>>(new Set());
+
+  const pad = (n: number) => String(n).padStart(2, '0');
+  const toLocalDateStr = (d: Date) =>
+    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+
+  // Fetch task dates for the current month
+  React.useEffect(() => {
+    async function fetchTaskDates() {
+      const year = currentMonth.getFullYear();
+      const month = currentMonth.getMonth();
+      const daysInMonth = new Date(year, month + 1, 0).getDate();
+      const dates = new Set<string>();
+
+      // Fetch all days in month in parallel would be too many requests.
+      // Instead, fetch all tasks and filter client-side.
+      try {
+        const res = await fetch('/api/tasks');
+        const tasks: { start_time: string | null }[] = await res.json();
+        const prefix = `${year}-${pad(month + 1)}`;
+        tasks.forEach((t) => {
+          if (t.start_time?.startsWith(prefix)) {
+            const dateStr = t.start_time.substring(0, 10);
+            dates.add(dateStr);
+          }
+        });
+      } catch (e) {
+        console.error('Failed to fetch task dates', e);
+      }
+      setTaskDates(dates);
+    }
+    fetchTaskDates();
+  }, [currentMonth]);
 
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
@@ -60,19 +93,32 @@ export function TaskCalendar({ selectedDate, onSelectDate, className }: TaskCale
         {Array.from({ length: firstDay }).map((_, i) => (
           <div key={`empty-${i}`} />
         ))}
-        {days.map((day) => (
-          <Button
-            key={day.toISOString()}
-            variant={isSameDay(day, selectedDate) ? 'default' : 'ghost'}
-            className={cn(
-              'h-8 w-8 p-0 text-sm font-normal',
-              isSameDay(day, new Date()) && !isSameDay(day, selectedDate) && 'text-primary font-bold'
-            )}
-            onClick={() => onSelectDate(day)}
-          >
-            {day.getDate()}
-          </Button>
-        ))}
+        {days.map((day) => {
+          const hasTask = taskDates.has(toLocalDateStr(day));
+          const isSelected = isSameDay(day, selectedDate);
+          const isToday = isSameDay(day, new Date());
+          return (
+            <Button
+              key={day.toISOString()}
+              variant={isSelected ? 'default' : 'ghost'}
+              className={cn(
+                'h-8 w-8 p-0 text-sm font-normal relative',
+                isToday && !isSelected && 'text-primary font-bold'
+              )}
+              onClick={() => onSelectDate(day)}
+            >
+              {day.getDate()}
+              {hasTask && (
+                <span
+                  className={cn(
+                    'absolute bottom-0.5 left-1/2 -translate-x-1/2 h-1 w-1 rounded-full',
+                    isSelected ? 'bg-primary-foreground' : 'bg-primary'
+                  )}
+                />
+              )}
+            </Button>
+          );
+        })}
       </div>
     </div>
   );
