@@ -4,7 +4,7 @@ import * as React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { PenLine, CalendarDays, BarChart3 } from 'lucide-react';
-import { ThemeToggle } from '@/components/theme-toggle';
+import { SettingsPanel } from '@/components/settings-panel';
 import { cn } from '@/lib/utils';
 
 const navItems = [
@@ -49,7 +49,7 @@ export function Sidebar() {
           })}
         </nav>
         <div className="flex flex-col items-center pb-4">
-          <ThemeToggle />
+          <SettingsPanel />
         </div>
       </aside>
 
