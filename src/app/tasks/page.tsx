@@ -2,16 +2,14 @@
 
 import * as React from 'react';
 import { TaskInput } from '@/components/task-logger/TaskInput';
-import { TaskCalendar } from '@/components/task-logger/TaskCalendar';
 import { TaskList } from '@/components/task-logger/TaskList';
-import { TaskStats } from '@/components/task-logger/TaskStats';
 import { TaskConfirmationModal } from '@/components/task-logger/TaskConfirmationModal';
 
-export default function TasksPage() {
-  const [selectedDate, setSelectedDate] = React.useState<Date>(new Date());
+export default function LogPage() {
   const [parsedTask, setParsedTask] = React.useState<any>(null);
   const [isModalOpen, setIsModalOpen] = React.useState(false);
   const [refreshTrigger, setRefreshTrigger] = React.useState(0);
+  const today = React.useMemo(() => new Date(), []);
 
   const handleTaskParsed = (data: any) => {
     setParsedTask(data);
@@ -32,16 +30,7 @@ export default function TasksPage() {
 
       setIsModalOpen(false);
       setParsedTask(null);
-      setRefreshTrigger((prev) => prev + 1); // Refresh list
-      
-      // If task date is different from selected, switch view?
-      // For now, keep selected date or switch to today if task is today.
-      if (task.start_time) {
-        const taskDate = new Date(task.start_time);
-        if (taskDate.toDateString() === new Date().toDateString()) {
-           setSelectedDate(taskDate);
-        }
-      }
+      setRefreshTrigger((prev) => prev + 1);
     } catch (error) {
       console.error('Save error:', error);
       alert('Failed to save task. Please try again.');
@@ -49,39 +38,20 @@ export default function TasksPage() {
   };
 
   return (
-    <div className="container mx-auto p-6 space-y-8">
-      <header className="flex flex-col items-center gap-4 text-center">
-        <h1 className="text-3xl font-bold tracking-tight">Work Task Logger</h1>
-        <p className="text-muted-foreground">
-          Log what you did, when you did it. Let AI handle the details.
+    <div className="max-w-2xl mx-auto p-6 space-y-8">
+      <header className="space-y-2">
+        <h1 className="text-2xl font-bold tracking-tight">Log Task</h1>
+        <p className="text-muted-foreground text-sm">
+          用自然语言记录你的工作，AI 自动解析时间和标签。
         </p>
-        <div className="w-full max-w-xl">
-          <TaskInput onParsed={handleTaskParsed} />
-        </div>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-4 space-y-6">
-          <TaskCalendar 
-            selectedDate={selectedDate} 
-            onSelectDate={setSelectedDate} 
-            className="w-full"
-          />
-          <div className="hidden lg:block">
-            <TaskStats /> {/* Show stats in sidebar on desktop */}
-          </div>
-        </div>
+      <TaskInput onParsed={handleTaskParsed} className="max-w-full" />
 
-        <div className="lg:col-span-8 space-y-6">
-          <TaskList 
-            selectedDate={selectedDate} 
-            refreshTrigger={refreshTrigger} 
-          />
-          <div className="lg:hidden">
-            <TaskStats /> {/* Show stats below list on mobile */}
-          </div>
-        </div>
-      </div>
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold">Today</h2>
+        <TaskList selectedDate={today} refreshTrigger={refreshTrigger} />
+      </section>
 
       <TaskConfirmationModal
         isOpen={isModalOpen}
