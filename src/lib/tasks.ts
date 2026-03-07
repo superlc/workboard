@@ -47,6 +47,29 @@ export function createTask(task: Task): Task {
   };
 }
 
+export function createTasks(tasks: Task[]): Task[] {
+  const stmt = db.prepare(`
+    INSERT INTO tasks (content, start_time, end_time, tags)
+    VALUES (?, ?, ?, ?)
+  `);
+
+  const insertMany = db.transaction((items: Task[]) => {
+    const results: Task[] = [];
+    for (const task of items) {
+      const tagsString = JSON.stringify(task.tags || []);
+      const result = stmt.run(task.content, task.start_time, task.end_time, tagsString);
+      results.push({
+        ...task,
+        id: result.lastInsertRowid as number,
+        tags: task.tags || [],
+      });
+    }
+    return results;
+  });
+
+  return insertMany(tasks);
+}
+
 export function getTasksByRange(startDate: string, endDate: string): Task[] {
   const stmt = db.prepare(`
     SELECT * FROM tasks 

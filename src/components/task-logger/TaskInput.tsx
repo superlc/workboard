@@ -3,7 +3,7 @@
 import * as React from 'react';
 import { Loader2, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { cn } from '@/lib/utils';
 
 interface TaskInputProps {
@@ -35,31 +35,39 @@ export function TaskInput({ onParsed, className }: TaskInputProps) {
       }
 
       const data = await response.json();
-      onParsed(data); // Pass parsed data to parent
-      setText(''); // Clear input on success
+      onParsed(data);
+      setText('');
     } catch (err) {
-      setError('Failed to process task. Please try again.');
+      setError('解析失败，请重试。');
     } finally {
       setLoading(false);
     }
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit(e);
+    }
+  };
+
   return (
-    <div className={cn('relative w-full max-w-lg mx-auto', className)}>
-      <form onSubmit={handleSubmit} className="flex items-center gap-2">
-        <Input
-          type="text"
-          placeholder="Log a task: 'Fixed login bug at 10am...'"
+    <div className={cn('relative w-full', className)}>
+      <form onSubmit={handleSubmit} className="relative">
+        <Textarea
+          placeholder="用自然语言记录工作，例如：&#10;上午10点到12点修复了登录页面的Bug&#10;下午2点开会讨论新需求，持续1小时"
           value={text}
           onChange={(e) => setText(e.target.value)}
+          onKeyDown={handleKeyDown}
           disabled={loading}
-          className="pr-12"
+          rows={4}
+          className="resize-none pr-14 min-h-[120px]"
         />
-        <Button 
-          type="submit" 
-          size="icon" 
+        <Button
+          type="submit"
+          size="icon"
           disabled={loading || !text.trim()}
-          className="absolute right-0 top-0 bottom-0 rounded-l-none"
+          className="absolute right-3 bottom-3"
         >
           {loading ? (
             <Loader2 className="h-4 w-4 animate-spin" />
@@ -68,6 +76,9 @@ export function TaskInput({ onParsed, className }: TaskInputProps) {
           )}
         </Button>
       </form>
+      <p className="text-muted-foreground text-xs mt-2">
+        按 Enter 发送，Shift + Enter 换行
+      </p>
       {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
     </div>
   );

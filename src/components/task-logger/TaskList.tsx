@@ -61,7 +61,7 @@ export function TaskList({ selectedDate, refreshTrigger, className }: TaskListPr
     <Card className={cn('w-full', className)}>
       <CardHeader>
         <CardTitle className="text-lg">
-          Tasks for {selectedDate.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}
+          {selectedDate.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' })} 的任务
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -73,7 +73,7 @@ export function TaskList({ selectedDate, refreshTrigger, className }: TaskListPr
           <div className="text-red-500 text-sm p-4 text-center">{error}</div>
         ) : tasks.length === 0 ? (
           <div className="text-muted-foreground text-sm text-center p-8">
-            No tasks logged for this day.
+            当天暂无任务记录。
           </div>
         ) : (
           <div className="space-y-4">

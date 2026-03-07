@@ -10,7 +10,7 @@ export default function CalendarPage() {
   return (
     <div className="p-6 space-y-6">
       <header>
-        <h1 className="text-2xl font-bold tracking-tight">Calendar</h1>
+        <h1 className="text-2xl font-bold tracking-tight">日历</h1>
         <p className="text-muted-foreground text-sm">按日期查看你的工作记录。</p>
       </header>
 

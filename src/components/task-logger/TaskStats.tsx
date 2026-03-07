@@ -68,8 +68,8 @@ export function TaskStats() {
     fetchStats();
   }, []);
 
-  if (loading) return <div>Loading stats...</div>;
-  if (!stats) return <div>No stats available</div>;
+  if (loading) return <div>正在加载统计数据...</div>;
+  if (!stats) return <div>暂无统计数据</div>;
 
   const maxHours = Math.max(...stats.dailyHours.map(d => d.hours), 1);
 
@@ -77,7 +77,7 @@ export function TaskStats() {
     <div className="grid gap-4 md:grid-cols-2">
       <Card>
         <CardHeader>
-          <CardTitle>Weekly Activity</CardTitle>
+          <CardTitle>本周工作量</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex items-end gap-2 h-40 pt-4">
@@ -92,7 +92,7 @@ export function TaskStats() {
                   </span>
                 </div>
                 <span className="text-[10px] text-muted-foreground whitespace-nowrap overflow-hidden text-ellipsis w-full text-center">
-                  {new Date(d.date).toLocaleDateString(undefined, { weekday: 'short' })}
+                  {new Date(d.date).toLocaleDateString('zh-CN', { weekday: 'short' })}
                 </span>
               </div>
             ))}
