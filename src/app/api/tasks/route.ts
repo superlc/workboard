@@ -10,10 +10,19 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const date = searchParams.get('date');
 
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
+    const limit = searchParams.get('limit');
+
     let tasks;
-    if (date) {
-      // Simple string prefix match for date (YYYY-MM-DD)
-      // Assuming start_time is stored in ISO format
+    if (startDate && endDate) {
+      const query = db.prepare(`
+        SELECT * FROM tasks 
+        WHERE start_time >= ? AND start_time <= ?
+        ORDER BY start_time ASC
+      `);
+      tasks = query.all(startDate, endDate + 'T23:59:59');
+    } else if (date) {
       const query = db.prepare(`
         SELECT * FROM tasks 
         WHERE start_time LIKE ? 
@@ -21,8 +30,9 @@ export async function GET(request: NextRequest) {
       `);
       tasks = query.all(`${date}%`);
     } else {
-      const query = db.prepare('SELECT * FROM tasks ORDER BY created_at DESC LIMIT 100');
-      tasks = query.all();
+      const l = limit ? parseInt(limit, 10) : 100;
+      const query = db.prepare('SELECT * FROM tasks ORDER BY created_at DESC LIMIT ?');
+      tasks = query.all(l);
     }
 
     // Parse tags from JSON string to array
