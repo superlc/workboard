@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { Loader2, Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -12,6 +13,7 @@ interface TaskInputProps {
 }
 
 export function TaskInput({ onParsed, className }: TaskInputProps) {
+  const t = useTranslations('TaskInput');
   const [text, setText] = React.useState('');
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -38,7 +40,7 @@ export function TaskInput({ onParsed, className }: TaskInputProps) {
       onParsed(data);
       setText('');
     } catch (err) {
-      setError('解析失败，请重试。');
+      setError(t('parseFailed'));
     } finally {
       setLoading(false);
     }
@@ -55,7 +57,7 @@ export function TaskInput({ onParsed, className }: TaskInputProps) {
     <div className={cn('relative w-full', className)}>
       <form onSubmit={handleSubmit} className="relative">
         <Textarea
-          placeholder="用自然语言记录工作，例如：&#10;上午10点到12点修复了登录页面的Bug&#10;下午2点开会讨论新需求，持续1小时"
+          placeholder={t('placeholder')}
           value={text}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={handleKeyDown}
@@ -77,7 +79,7 @@ export function TaskInput({ onParsed, className }: TaskInputProps) {
         </Button>
       </form>
       <p className="text-muted-foreground text-xs mt-2">
-        按 Enter 发送，Shift + Enter 换行
+        {t('hint')}
       </p>
       {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
     </div>

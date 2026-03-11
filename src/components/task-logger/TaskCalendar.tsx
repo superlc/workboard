@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations, useLocale } from 'next-intl';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -12,6 +13,8 @@ interface TaskCalendarProps {
 }
 
 export function TaskCalendar({ selectedDate, onSelectDate, className }: TaskCalendarProps) {
+  const t = useTranslations('Calendar');
+  const locale = useLocale();
   const [currentMonth, setCurrentMonth] = React.useState(new Date(selectedDate));
   const [taskDates, setTaskDates] = React.useState<Set<string>>(new Set());
 
@@ -19,23 +22,19 @@ export function TaskCalendar({ selectedDate, onSelectDate, className }: TaskCale
   const toLocalDateStr = (d: Date) =>
     `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
 
-  // Fetch task dates for the current month
   React.useEffect(() => {
     async function fetchTaskDates() {
       const year = currentMonth.getFullYear();
       const month = currentMonth.getMonth();
-      const daysInMonth = new Date(year, month + 1, 0).getDate();
       const dates = new Set<string>();
 
-      // Fetch all days in month in parallel would be too many requests.
-      // Instead, fetch all tasks and filter client-side.
       try {
         const res = await fetch('/api/tasks');
         const tasks: { start_time: string | null }[] = await res.json();
         const prefix = `${year}-${pad(month + 1)}`;
-        tasks.forEach((t) => {
-          if (t.start_time?.startsWith(prefix)) {
-            const dateStr = t.start_time.substring(0, 10);
+        tasks.forEach((task) => {
+          if (task.start_time?.startsWith(prefix)) {
+            const dateStr = task.start_time.substring(0, 10);
             dates.add(dateStr);
           }
         });
@@ -71,6 +70,9 @@ export function TaskCalendar({ selectedDate, onSelectDate, className }: TaskCale
            d1.getDate() === d2.getDate();
   };
 
+  const dateLocale = locale === 'zh' ? 'zh-CN' : 'en-US';
+  const weekDays = [t('sun'), t('mon'), t('tue'), t('wed'), t('thu'), t('fri'), t('sat')];
+
   return (
     <div className={cn('p-4 border rounded-md shadow-sm bg-card', className)}>
       <div className="flex items-center justify-between mb-4">
@@ -78,14 +80,14 @@ export function TaskCalendar({ selectedDate, onSelectDate, className }: TaskCale
           <ChevronLeft className="h-4 w-4" />
         </Button>
         <div className="font-semibold">
-          {currentMonth.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long' })}
+          {currentMonth.toLocaleDateString(dateLocale, { year: 'numeric', month: 'long' })}
         </div>
         <Button variant="ghost" size="icon" onClick={nextMonth}>
           <ChevronRight className="h-4 w-4" />
         </Button>
       </div>
       <div className="grid grid-cols-7 gap-1 text-center text-xs text-muted-foreground mb-2">
-        {['日', '一', '二', '三', '四', '五', '六'].map((day) => (
+        {weekDays.map((day) => (
           <div key={day} className="py-1">{day}</div>
         ))}
       </div>

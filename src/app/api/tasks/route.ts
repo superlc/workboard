@@ -60,7 +60,7 @@ export async function POST(request: NextRequest) {
       const validTasks = body.tasks.filter((t: any) => t.content);
       if (validTasks.length === 0) {
         return NextResponse.json(
-          { error: '至少需要一条有效任务' },
+          { error: 'At least one valid task is required' },
           { status: 400 }
         );
       }

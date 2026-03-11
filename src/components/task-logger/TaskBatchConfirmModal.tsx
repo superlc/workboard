@@ -1,6 +1,7 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations } from 'next-intl';
 import { X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -36,15 +37,16 @@ function toDatetimeLocal(timeStr: string | null): string | null {
 }
 
 export function TaskBatchConfirmModal({ isOpen, onClose, parsedTasks, onSave }: TaskBatchConfirmModalProps) {
+  const t = useTranslations('BatchModal');
   const [formTasks, setFormTasks] = React.useState<ParsedTask[]>([]);
 
   React.useEffect(() => {
     if (parsedTasks.length > 0) {
       setFormTasks(
-        parsedTasks.map((t) => ({
-          ...t,
-          start_time: toDatetimeLocal(t.start_time),
-          end_time: toDatetimeLocal(t.end_time),
+        parsedTasks.map((task) => ({
+          ...task,
+          start_time: toDatetimeLocal(task.start_time),
+          end_time: toDatetimeLocal(task.end_time),
         }))
       );
     }
@@ -85,9 +87,9 @@ export function TaskBatchConfirmModal({ isOpen, onClose, parsedTasks, onSave }: 
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-[600px] max-h-[80vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>确认任务（共 {formTasks.length} 条）</DialogTitle>
+          <DialogTitle>{t('title', { count: formTasks.length })}</DialogTitle>
           <DialogDescription>
-            请确认 AI 解析的任务详情，可逐条修改或删除后批量保存。
+            {t('description')}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 py-2">
@@ -98,7 +100,7 @@ export function TaskBatchConfirmModal({ isOpen, onClose, parsedTasks, onSave }: 
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-medium text-muted-foreground">
-                  任务 {index + 1}
+                  {t('taskLabel', { index: index + 1 })}
                 </span>
                 <Button
                   type="button"
@@ -112,7 +114,7 @@ export function TaskBatchConfirmModal({ isOpen, onClose, parsedTasks, onSave }: 
               </div>
 
               <div className="grid grid-cols-4 items-center gap-3">
-                <Label className="text-right text-xs">内容</Label>
+                <Label className="text-right text-xs">{t('content')}</Label>
                 <Input
                   value={task.content}
                   onChange={(e) => handleFieldChange(index, 'content', e.target.value)}
@@ -121,7 +123,7 @@ export function TaskBatchConfirmModal({ isOpen, onClose, parsedTasks, onSave }: 
               </div>
 
               <div className="grid grid-cols-4 items-center gap-3">
-                <Label className="text-right text-xs">开始</Label>
+                <Label className="text-right text-xs">{t('start')}</Label>
                 <Input
                   type="datetime-local"
                   value={task.start_time || ''}
@@ -131,7 +133,7 @@ export function TaskBatchConfirmModal({ isOpen, onClose, parsedTasks, onSave }: 
               </div>
 
               <div className="grid grid-cols-4 items-center gap-3">
-                <Label className="text-right text-xs">结束</Label>
+                <Label className="text-right text-xs">{t('end')}</Label>
                 <Input
                   type="datetime-local"
                   value={task.end_time || ''}
@@ -141,12 +143,12 @@ export function TaskBatchConfirmModal({ isOpen, onClose, parsedTasks, onSave }: 
               </div>
 
               <div className="grid grid-cols-4 items-center gap-3">
-                <Label className="text-right text-xs">标签</Label>
+                <Label className="text-right text-xs">{t('tags')}</Label>
                 <Input
                   value={task.tags.join(', ')}
                   onChange={(e) => handleTagsChange(index, e.target.value)}
                   className="col-span-3 h-8 text-sm"
-                  placeholder="开发, 会议（逗号分隔）"
+                  placeholder={t('tagsPlaceholder')}
                 />
               </div>
             </div>
@@ -154,10 +156,10 @@ export function TaskBatchConfirmModal({ isOpen, onClose, parsedTasks, onSave }: 
 
           <div className="flex justify-end gap-2 pt-2">
             <Button type="button" variant="outline" onClick={onClose}>
-              取消
+              {t('cancel')}
             </Button>
             <Button type="submit">
-              全部保存（{formTasks.length} 条）
+              {t('saveAll', { count: formTasks.length })}
             </Button>
           </div>
         </form>

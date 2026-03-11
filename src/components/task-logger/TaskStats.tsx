@@ -1,9 +1,9 @@
 'use client';
 
 import * as React from 'react';
+import { useTranslations, useLocale } from 'next-intl';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { cn } from '@/lib/utils';
 
 interface Task {
   id: number;
@@ -29,9 +29,9 @@ function getPresetRange(preset: string): [Date, Date] {
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   switch (preset) {
     case 'week': {
-      const day = today.getDay(); // 0=Sun
+      const day = today.getDay();
       const start = new Date(today);
-      start.setDate(today.getDate() - (day === 0 ? 6 : day - 1)); // Monday
+      start.setDate(today.getDate() - (day === 0 ? 6 : day - 1));
       return [start, today];
     }
     case 'month': {
@@ -81,7 +81,7 @@ const TAG_COLORS = [
   'rgba(255,220,180,0.75)',
 ];
 
-function TagCloud({ tags }: { tags: { tag: string; count: number }[] }) {
+function TagCloud({ tags, noDataText }: { tags: { tag: string; count: number }[]; noDataText: string }) {
   const containerRef = React.useRef<HTMLDivElement>(null);
   const [positions, setPositions] = React.useState<
     { left: number; top: number; fontSize: number; color: string; tag: string; count: number }[]
@@ -184,7 +184,7 @@ function TagCloud({ tags }: { tags: { tag: string; count: number }[] }) {
       ))}
       {positions.length === 0 && (
         <div className="flex items-center justify-center h-full text-white/40 text-sm">
-          暂无标签数据
+          {noDataText}
         </div>
       )}
     </div>
@@ -192,24 +192,20 @@ function TagCloud({ tags }: { tags: { tag: string; count: number }[] }) {
 }
 
 // --- Date Range Picker ---
-const PRESETS = [
-  { key: 'week', label: '本周' },
-  { key: 'month', label: '本月' },
-  { key: 'last7', label: '近7天' },
-  { key: 'last30', label: '近30天' },
-  { key: 'custom', label: '自定义' },
-] as const;
-
 function DateRangePicker({
   value,
   onChange,
+  presetLabels,
+  toLabel,
 }: {
   value: { startDate: string; endDate: string; preset: string };
   onChange: (v: { startDate: string; endDate: string; preset: string }) => void;
+  presetLabels: { key: string; label: string }[];
+  toLabel: string;
 }) {
   return (
     <div className="flex flex-wrap items-center gap-2">
-      {PRESETS.map((p) => (
+      {presetLabels.map((p) => (
         <Button
           key={p.key}
           variant={value.preset === p.key ? 'default' : 'outline'}
@@ -235,7 +231,7 @@ function DateRangePicker({
             onChange={(e) => onChange({ ...value, startDate: e.target.value })}
             className="h-7 text-xs border rounded-md px-2 bg-background"
           />
-          <span className="text-xs text-muted-foreground">至</span>
+          <span className="text-xs text-muted-foreground">{toLabel}</span>
           <input
             type="date"
             value={value.endDate}
@@ -250,16 +246,25 @@ function DateRangePicker({
 
 // --- Main Component ---
 export function TaskStats() {
+  const t = useTranslations('Stats');
+  const locale = useLocale();
   const [stats, setStats] = React.useState<StatsData | null>(null);
   const [loading, setLoading] = React.useState(true);
 
-  // Default to current week
   const [weekStart, weekEnd] = getPresetRange('week');
   const [range, setRange] = React.useState({
     startDate: toLocalDate(weekStart),
     endDate: toLocalDate(weekEnd),
     preset: 'week',
   });
+
+  const presetLabels = [
+    { key: 'week', label: t('presetWeek') },
+    { key: 'month', label: t('presetMonth') },
+    { key: 'last7', label: t('presetLast7') },
+    { key: 'last30', label: t('presetLast30') },
+    { key: 'custom', label: t('presetCustom') },
+  ];
 
   const fetchStats = React.useCallback(async (startDate: string, endDate: string) => {
     setLoading(true);
@@ -313,34 +318,32 @@ export function TaskStats() {
 
   const maxHours = stats ? Math.max(...stats.dailyHours.map((d) => d.hours), 1) : 1;
 
-  // Decide x-axis label format based on range length
   const dayCount = stats?.dailyHours.length ?? 0;
+  const dateLocale = locale === 'zh' ? 'zh-CN' : 'en-US';
   const formatLabel = (dateStr: string) => {
     const d = new Date(dateStr + 'T00:00:00');
     if (dayCount <= 7) {
-      return d.toLocaleDateString('zh-CN', { weekday: 'short' });
+      return d.toLocaleDateString(dateLocale, { weekday: 'short' });
     }
     return `${d.getMonth() + 1}/${d.getDate()}`;
   };
 
-  // For long ranges, skip some labels
   const labelStep = dayCount > 15 ? Math.ceil(dayCount / 10) : 1;
 
   return (
     <div className="space-y-4">
-      {/* Date range picker */}
-      <DateRangePicker value={range} onChange={handleRangeChange} />
+      <DateRangePicker value={range} onChange={handleRangeChange} presetLabels={presetLabels} toLabel={t('to')} />
 
       {loading ? (
-        <div className="text-sm text-muted-foreground">正在加载统计数据...</div>
+        <div className="text-sm text-muted-foreground">{t('loading')}</div>
       ) : !stats ? (
-        <div className="text-sm text-muted-foreground">暂无统计数据</div>
+        <div className="text-sm text-muted-foreground">{t('noData')}</div>
       ) : (
         <div className="grid gap-4 md:grid-cols-2">
           <Card>
             <CardHeader>
               <CardTitle>
-                工作量{' '}
+                {t('workload')}{' '}
                 <span className="text-sm font-normal text-muted-foreground">
                   {stats.totalHours.toFixed(1)}h
                 </span>
@@ -382,10 +385,10 @@ export function TaskStats() {
 
           <Card>
             <CardHeader>
-              <CardTitle>标签分布</CardTitle>
+              <CardTitle>{t('tagDistribution')}</CardTitle>
             </CardHeader>
             <CardContent>
-              <TagCloud tags={stats.tagDistribution} />
+              <TagCloud tags={stats.tagDistribution} noDataText={t('noTagData')} />
             </CardContent>
           </Card>
         </div>

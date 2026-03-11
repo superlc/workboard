@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { format } from 'date-fns';
+import { useTranslations, useLocale } from 'next-intl';
 import { Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
@@ -17,11 +17,13 @@ interface Task {
 
 interface TaskListProps {
   selectedDate: Date;
-  refreshTrigger: number; // Increment to force refresh
+  refreshTrigger: number;
   className?: string;
 }
 
 export function TaskList({ selectedDate, refreshTrigger, className }: TaskListProps) {
+  const t = useTranslations('TaskList');
+  const locale = useLocale();
   const [tasks, setTasks] = React.useState<Task[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
@@ -30,7 +32,6 @@ export function TaskList({ selectedDate, refreshTrigger, className }: TaskListPr
     setLoading(true);
     setError(null);
     try {
-      // Format date as YYYY-MM-DD
       const year = selectedDate.getFullYear();
       const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
       const day = String(selectedDate.getDate()).padStart(2, '0');
@@ -57,11 +58,18 @@ export function TaskList({ selectedDate, refreshTrigger, className }: TaskListPr
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  const dateLocale = locale === 'zh' ? 'zh-CN' : 'en-US';
+  const dateLabel = selectedDate.toLocaleDateString(dateLocale, {
+    month: 'long',
+    day: 'numeric',
+    weekday: 'long',
+  });
+
   return (
     <Card className={cn('w-full', className)}>
       <CardHeader>
         <CardTitle className="text-lg">
-          {selectedDate.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric', weekday: 'long' })} 的任务
+          {t('dateTasksTitle', { date: dateLabel })}
         </CardTitle>
       </CardHeader>
       <CardContent>
@@ -73,7 +81,7 @@ export function TaskList({ selectedDate, refreshTrigger, className }: TaskListPr
           <div className="text-red-500 text-sm p-4 text-center">{error}</div>
         ) : tasks.length === 0 ? (
           <div className="text-muted-foreground text-sm text-center p-8">
-            当天暂无任务记录。
+            {t('noTasks')}
           </div>
         ) : (
           <div className="space-y-4">

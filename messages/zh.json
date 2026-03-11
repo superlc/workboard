@@ -1,0 +1,75 @@
+{
+  "Nav": {
+    "input": "录入",
+    "calendar": "日历",
+    "stats": "统计"
+  },
+  "Settings": {
+    "label": "设置",
+    "theme": "主题",
+    "themeLight": "浅色",
+    "themeDark": "深色",
+    "themeSystem": "跟随系统",
+    "language": "语言"
+  },
+  "LogPage": {
+    "title": "记录任务",
+    "description": "用自然语言记录你的工作，AI 自动解析时间和标签。",
+    "todayTasks": "今日任务",
+    "saveFailed": "保存失败，请重试。"
+  },
+  "TaskInput": {
+    "placeholder": "用自然语言记录工作，例如：\n上午10点到12点修复了登录页面的Bug\n下午2点开会讨论新需求，持续1小时",
+    "hint": "按 Enter 发送，Shift + Enter 换行",
+    "parseFailed": "解析失败，请重试。"
+  },
+  "TaskList": {
+    "dateTasksTitle": "{date} 的任务",
+    "noTasks": "当天暂无任务记录。"
+  },
+  "CalendarPage": {
+    "title": "日历",
+    "description": "按日期查看你的工作记录。"
+  },
+  "Calendar": {
+    "sun": "日",
+    "mon": "一",
+    "tue": "二",
+    "wed": "三",
+    "thu": "四",
+    "fri": "五",
+    "sat": "六"
+  },
+  "StatsPage": {
+    "title": "统计",
+    "description": "查看你的工作时间分布和标签统计。"
+  },
+  "Stats": {
+    "workload": "工作量",
+    "tagDistribution": "标签分布",
+    "noTagData": "暂无标签数据",
+    "loading": "正在加载统计数据...",
+    "noData": "暂无统计数据",
+    "presetWeek": "本周",
+    "presetMonth": "本月",
+    "presetLast7": "近7天",
+    "presetLast30": "近30天",
+    "presetCustom": "自定义",
+    "to": "至"
+  },
+  "BatchModal": {
+    "title": "确认任务（共 {count} 条）",
+    "description": "请确认 AI 解析的任务详情，可逐条修改或删除后批量保存。",
+    "taskLabel": "任务 {index}",
+    "content": "内容",
+    "start": "开始",
+    "end": "结束",
+    "tags": "标签",
+    "tagsPlaceholder": "开发, 会议（逗号分隔）",
+    "cancel": "取消",
+    "saveAll": "全部保存（{count} 条）"
+  },
+  "Api": {
+    "atLeastOneTask": "至少需要一条有效任务"
+  }
+}
