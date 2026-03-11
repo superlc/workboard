@@ -55,7 +55,10 @@
     "presetLast7": "近7天",
     "presetLast30": "近30天",
     "presetCustom": "自定义",
-    "to": "至"
+    "to": "至",
+    "export": "导出",
+    "exportCSV": "CSV",
+    "exportMarkdown": "Markdown"
   },
   "BatchModal": {
     "title": "确认任务（共 {count} 条）",

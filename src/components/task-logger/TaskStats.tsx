@@ -4,6 +4,7 @@ import * as React from 'react';
 import { useTranslations, useLocale } from 'next-intl';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Download, ChevronDown } from 'lucide-react';
 
 interface Task {
   id: number;
@@ -244,11 +245,181 @@ function DateRangePicker({
   );
 }
 
+// --- CSV escaping helper ---
+function escapeCSVField(field: string): string {
+  if (field.includes(',') || field.includes('"') || field.includes('\n')) {
+    return `"${field.replace(/"/g, '""')}"`;
+  }
+  return field;
+}
+
+// --- CSV Report Generator ---
+function generateCSV(tasks: Task[]): string {
+  const header = 'Date,Content,Start Time,End Time,Duration (h),Tags';
+  const rows = tasks
+    .filter((t) => t.start_time)
+    .map((t) => {
+      const date = t.start_time!.substring(0, 10);
+      const content = escapeCSVField(t.content);
+      const startTime = t.start_time
+        ? new Date(t.start_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
+        : '';
+      const endTime = t.end_time
+        ? new Date(t.end_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
+        : '';
+      let duration: string;
+      if (t.start_time && t.end_time) {
+        const ms = new Date(t.end_time).getTime() - new Date(t.start_time).getTime();
+        duration = (ms / (1000 * 60 * 60)).toFixed(1);
+      } else {
+        duration = '0.5';
+      }
+      const tags = escapeCSVField(t.tags.join(', '));
+      return `${date},${content},${startTime},${endTime},${duration},${tags}`;
+    });
+  return [header, ...rows].join('\n');
+}
+
+// --- Markdown Report Generator ---
+function generateMarkdown(
+  tasks: Task[],
+  startDate: string,
+  endDate: string,
+  dailyHours: { date: string; hours: number }[],
+  totalHours: number
+): string {
+  const lines: string[] = [];
+
+  // Header
+  lines.push(`# Work Report: ${startDate} to ${endDate}`);
+  lines.push('');
+  lines.push(`**Total: ${totalHours.toFixed(1)}h**`);
+  lines.push('');
+
+  // Daily summary table
+  lines.push('## Daily Hours');
+  lines.push('');
+  lines.push('| Date | Hours |');
+  lines.push('|------|-------|');
+  for (const d of dailyHours) {
+    if (d.hours > 0) {
+      lines.push(`| ${d.date} | ${d.hours.toFixed(1)}h |`);
+    }
+  }
+  lines.push('');
+
+  // Task details grouped by date
+  lines.push('## Task Details');
+  lines.push('');
+  const tasksByDate = new Map<string, Task[]>();
+  for (const t of tasks) {
+    if (!t.start_time) continue;
+    const date = t.start_time.substring(0, 10);
+    if (!tasksByDate.has(date)) tasksByDate.set(date, []);
+    tasksByDate.get(date)!.push(t);
+  }
+
+  const sortedDates = [...tasksByDate.keys()].sort();
+  for (const date of sortedDates) {
+    lines.push(`### ${date}`);
+    lines.push('');
+    for (const t of tasksByDate.get(date)!) {
+      const startTime = t.start_time
+        ? new Date(t.start_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
+        : '?';
+      const endTime = t.end_time
+        ? new Date(t.end_time).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
+        : '?';
+      const tagsStr = t.tags.length > 0 ? ` \`${t.tags.join('` `')}\`` : '';
+      lines.push(`- **${t.content}** (${startTime}–${endTime})${tagsStr}`);
+    }
+    lines.push('');
+  }
+
+  return lines.join('\n');
+}
+
+// --- Download Trigger ---
+function downloadFile(content: string, filename: string, mimeType: string): void {
+  const blob = new Blob([content], { type: mimeType });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// --- Export Dropdown ---
+function ExportDropdown({
+  onExportCSV,
+  onExportMarkdown,
+  labels,
+}: {
+  onExportCSV: () => void;
+  onExportMarkdown: () => void;
+  labels: { export: string; csv: string; markdown: string };
+}) {
+  const [open, setOpen] = React.useState(false);
+  const dropdownRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (!open) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [open]);
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <Button
+        variant="outline"
+        size="sm"
+        className="h-7 text-xs gap-1"
+        onClick={() => setOpen((prev) => !prev)}
+      >
+        <Download className="size-3" />
+        {labels.export}
+        <ChevronDown className="size-3" />
+      </Button>
+      {open && (
+        <div className="absolute right-0 top-full mt-1 z-50 min-w-[120px] rounded-md border bg-popover p-1 shadow-md">
+          <button
+            className="flex w-full items-center rounded-sm px-2 py-1.5 text-xs hover:bg-muted cursor-pointer"
+            onClick={() => {
+              onExportCSV();
+              setOpen(false);
+            }}
+          >
+            {labels.csv}
+          </button>
+          <button
+            className="flex w-full items-center rounded-sm px-2 py-1.5 text-xs hover:bg-muted cursor-pointer"
+            onClick={() => {
+              onExportMarkdown();
+              setOpen(false);
+            }}
+          >
+            {labels.markdown}
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 // --- Main Component ---
 export function TaskStats() {
   const t = useTranslations('Stats');
   const locale = useLocale();
   const [stats, setStats] = React.useState<StatsData | null>(null);
+  const [tasks, setTasks] = React.useState<Task[]>([]);
   const [loading, setLoading] = React.useState(true);
 
   const [weekStart, weekEnd] = getPresetRange('week');
@@ -301,6 +472,7 @@ export function TaskStats() {
         .sort((a, b) => b.count - a.count);
 
       setStats({ dailyHours, tagDistribution, totalHours });
+      setTasks(data);
     } catch (e) {
       console.error('Failed to load stats', e);
     } finally {
@@ -314,6 +486,19 @@ export function TaskStats() {
 
   const handleRangeChange = (v: { startDate: string; endDate: string; preset: string }) => {
     setRange(v);
+  };
+
+  const handleExportCSV = () => {
+    const csv = generateCSV(tasks);
+    const filename = `workboard-report-${range.startDate}-to-${range.endDate}.csv`;
+    downloadFile(csv, filename, 'text/csv;charset=utf-8');
+  };
+
+  const handleExportMarkdown = () => {
+    if (!stats) return;
+    const md = generateMarkdown(tasks, range.startDate, range.endDate, stats.dailyHours, stats.totalHours);
+    const filename = `workboard-report-${range.startDate}-to-${range.endDate}.md`;
+    downloadFile(md, filename, 'text/markdown;charset=utf-8');
   };
 
   const maxHours = stats ? Math.max(...stats.dailyHours.map((d) => d.hours), 1) : 1;
@@ -332,7 +517,20 @@ export function TaskStats() {
 
   return (
     <div className="space-y-4">
-      <DateRangePicker value={range} onChange={handleRangeChange} presetLabels={presetLabels} toLabel={t('to')} />
+      <div className="flex flex-wrap items-center gap-2 justify-between">
+        <DateRangePicker value={range} onChange={handleRangeChange} presetLabels={presetLabels} toLabel={t('to')} />
+        {!loading && stats && (
+          <ExportDropdown
+            onExportCSV={handleExportCSV}
+            onExportMarkdown={handleExportMarkdown}
+            labels={{
+              export: t('export'),
+              csv: t('exportCSV'),
+              markdown: t('exportMarkdown'),
+            }}
+          />
+        )}
+      </div>
 
       {loading ? (
         <div className="text-sm text-muted-foreground">{t('loading')}</div>

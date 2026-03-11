@@ -55,7 +55,10 @@
     "presetLast7": "Last 7 Days",
     "presetLast30": "Last 30 Days",
     "presetCustom": "Custom",
-    "to": "to"
+    "to": "to",
+    "export": "Export",
+    "exportCSV": "CSV",
+    "exportMarkdown": "Markdown"
   },
   "BatchModal": {
     "title": "Confirm Tasks ({count} total)",
