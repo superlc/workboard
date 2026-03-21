@@ -25,7 +25,9 @@
   },
   "TaskList": {
     "dateTasksTitle": "{date} 的任务",
-    "noTasks": "当天暂无任务记录。"
+    "noTasks": "当天暂无任务记录。",
+    "deleteConfirm": "删除?",
+    "deleteFailed": "删除失败"
   },
   "CalendarPage": {
     "title": "日历",

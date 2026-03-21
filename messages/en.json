@@ -25,7 +25,9 @@
   },
   "TaskList": {
     "dateTasksTitle": "{date} Tasks",
-    "noTasks": "No tasks recorded for this day."
+    "noTasks": "No tasks recorded for this day.",
+    "deleteConfirm": "Delete?",
+    "deleteFailed": "Delete failed"
   },
   "CalendarPage": {
     "title": "Calendar",

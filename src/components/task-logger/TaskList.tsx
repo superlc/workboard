@@ -2,7 +2,7 @@
 
 import * as React from 'react';
 import { useTranslations, useLocale } from 'next-intl';
-import { Loader2 } from 'lucide-react';
+import { Loader2, Trash2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,6 +27,7 @@ export function TaskList({ selectedDate, refreshTrigger, className }: TaskListPr
   const [tasks, setTasks] = React.useState<Task[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
+  const [deletingId, setDeletingId] = React.useState<number | null>(null);
 
   const fetchTasks = React.useCallback(async () => {
     setLoading(true);
@@ -58,6 +59,40 @@ export function TaskList({ selectedDate, refreshTrigger, className }: TaskListPr
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  // Click-outside to cancel delete confirmation
+  React.useEffect(() => {
+    if (deletingId === null) return;
+    const handleClickOutside = () => setDeletingId(null);
+    const timer = setTimeout(() => {
+      document.addEventListener('click', handleClickOutside);
+    }, 0);
+    return () => {
+      clearTimeout(timer);
+      document.removeEventListener('click', handleClickOutside);
+    };
+  }, [deletingId]);
+
+  // Optimistic delete with rollback
+  const handleDelete = async (taskId: number) => {
+    const taskIndex = tasks.findIndex((item) => item.id === taskId);
+    const removedTask = tasks[taskIndex];
+    setTasks((prev) => prev.filter((item) => item.id !== taskId));
+    setDeletingId(null);
+
+    try {
+      const response = await fetch(`/api/tasks?id=${taskId}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error('Delete failed');
+    } catch {
+      setTasks((prev) => {
+        const copy = [...prev];
+        copy.splice(taskIndex, 0, removedTask);
+        return copy;
+      });
+      setError(t('deleteFailed'));
+      setTimeout(() => setError(null), 3000);
+    }
+  };
+
   const dateLocale = locale === 'zh' ? 'zh-CN' : 'en-US';
   const dateLabel = selectedDate.toLocaleDateString(dateLocale, {
     month: 'long',
@@ -86,7 +121,7 @@ export function TaskList({ selectedDate, refreshTrigger, className }: TaskListPr
         ) : (
           <div className="space-y-4">
             {tasks.map((task) => (
-              <div key={task.id} className="flex items-start gap-4 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+              <div key={task.id} className="group flex items-start gap-4 p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
                 <div className="flex flex-col items-center min-w-[60px] text-xs text-muted-foreground pt-1">
                   <span>{formatTime(task.start_time)}</span>
                   {task.end_time && (
@@ -105,6 +140,29 @@ export function TaskList({ selectedDate, refreshTrigger, className }: TaskListPr
                       </Badge>
                     ))}
                   </div>
+                </div>
+                <div className="flex items-center self-center">
+                  {deletingId === task.id ? (
+                    <button
+                      className="text-xs text-destructive font-medium px-2 py-1 rounded hover:bg-destructive/10 transition-colors cursor-pointer whitespace-nowrap"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(task.id);
+                      }}
+                    >
+                      {t('deleteConfirm')}
+                    </button>
+                  ) : (
+                    <button
+                      className="opacity-0 group-hover:opacity-100 [@media(hover:none)]:opacity-100 text-muted-foreground hover:text-destructive p-1 rounded transition-all cursor-pointer"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setDeletingId(task.id);
+                      }}
+                    >
+                      <Trash2 className="size-3.5" />
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
